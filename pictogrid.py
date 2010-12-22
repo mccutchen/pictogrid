@@ -38,23 +38,13 @@ def pictogrid(images, cols, tile_width, tile_height, padding=0,
     output_img = Image.new('RGB', (output_width, output_height), background)
     draw = ImageDraw.Draw(output_img)
 
-    # Used to compare & resize each individual image
-    tile_size = (tile_width, tile_height)
-
     for i, path in enumerate(images):
         col = i % cols
         row = (i / cols)
-        logging.info('Processing image %s: %s @ %r', i, path, (col, row))
+        logging.info('Processing %s: %3d @ (%2d, %2d)', path, i, col, row)
 
-        img = Image.open(path)
-
-        if img.size != tile_size:
-            img, extra_offset = resize(img, tile_size)
-        else:
-            extra_offset = (0, 0)
-
-        offset = make_offset(
-            col, row, tile_width, tile_height, padding, extra_offset)
+        img = open_and_size(path, tile_width, tile_height)
+        offset = make_offset(img, col, row, tile_width, tile_height, padding)
         logging.debug('Offset: %r', offset)
 
         output_img.paste(img, offset)
@@ -70,27 +60,40 @@ def pictogrid(images, cols, tile_width, tile_height, padding=0,
     return output_img
 
 
-def make_offset(col, row, w, h, padding, extra_offset=(0,0)):
-    x = w * col + padding * (col + 1)
-    y = h * row + padding * (row + 1)
-    dx, dy = extra_offset
+def make_offset(img, col, row, tw, th, padding):
+    """Calculates the appropriate offset to place the given image at the given
+    column and row on a grid with cells with the given target width and height
+    and padding."""
+
+    # Calculate the offset of this image's grid panel
+    x = tw * col + padding * (col + 1)
+    y = th * row + padding * (row + 1)
+
+    # Calculate the offset required to center the image in the panel
+    w, h = img.size
+    dx = (tw - w) / 2
+    dy = (th - h) / 2
+
     return (x + dx, y + dy)
 
 
-def resize(img, (target_w, target_h)):
+def open_and_size(path, tw, th):
+    """Opens the image at the given path and ensures that it fits into the
+    given target width and height."""
+
+    img = Image.open(path)
+
+    if img.size == (tw, th):
+        return img
+
     w, h = img.size
-    ratio = min(float(target_w)/float(w),
-                float(target_h)/float(h))
-    new_w = int(w * ratio)
-    new_h = int(h * ratio)
+    ratio = min(tw/float(w),
+                th/float(h))
+    nw = int(w * ratio)
+    nh = int(h * ratio)
 
-    logging.debug('Resizing %r => %r', (w,h),(target_w,target_h))
+    logging.debug('Resizing %r => %r', (w,h), (tw,th))
     logging.debug('Ratio: %s', ratio)
-    logging.debug('New size: %r', (new_w, new_h))
+    logging.debug('New size: %r', (nw, nh))
 
-    dx = (target_w - new_w) / 2
-    dy = (target_h - new_h) / 2
-    offset = (dx, dy)
-
-    logging.debug('Extra Offset: %r', offset)
-    return img.resize((new_w, new_h), Image.ANTIALIAS), offset
+    return img.resize((nw, nh), Image.ANTIALIAS)
