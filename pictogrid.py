@@ -6,7 +6,7 @@ import logging
 
 import Image, ImageDraw
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.ERROR)
 
 
 def pictogrid(images, cols, tile_width, tile_height, padding=0,
@@ -84,17 +84,13 @@ def resize(img, (target_w, target_h)):
     new_w = int(w * ratio)
     new_h = int(h * ratio)
 
-    logging.debug('Resizing img %s: %r => %r', img,(w,h),(target_w,target_h))
+    logging.debug('Resizing %r => %r', (w,h),(target_w,target_h))
     logging.debug('Ratio: %s', ratio)
     logging.debug('New size: %r', (new_w, new_h))
 
-    # Update the offset to center the oddly-sized
-    # image in its assigned space
-    # if new_w > new_h:
-    #     offset = (0, new_h / 2)
-    # else:
-    #     offset = (new_w / 2, 0)
-    offset = (0, 0)
+    dx = (target_w - new_w) / 2
+    dy = (target_h - new_h) / 2
+    offset = (dx, dy)
 
-    logging.debug('Offset: %r', offset)
+    logging.debug('Extra Offset: %r', offset)
     return img.resize((new_w, new_h), Image.ANTIALIAS), offset
