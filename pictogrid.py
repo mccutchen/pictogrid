@@ -1,9 +1,21 @@
+#!/usr/bin/env python
 
-import os
-import sys
+__doc__ = """pictogrid.py
+
+Provides a function, pictogrid, that will take a list of images and arrange
+them into a grid.
+
+The module can also be executed directly from the command line."""
+
+import glob
 import logging
+import optparse
+import sys
 
 import Image, ImageDraw
+
+usage = """Usage: %prog -c COLUMNS [options] image1 [image2 ... imageN]"""
+description = """Arranges images into a grid."""
 
 logging.getLogger().setLevel(logging.ERROR)
 
@@ -96,3 +108,42 @@ def open_and_size(img_or_path, tw, th):
     logging.debug('New size: %r', (nw, nh))
 
     return img.resize((nw, nh), Image.ANTIALIAS)
+
+def main(argv):
+    parser = optparse.OptionParser(usage=usage, description=description)
+    parser.add_option('-c', '--cols', help='Number of columns in the grid',
+                      dest='cols', type='int')
+    parser.add_option('-d', '--dimensions',
+                      help='Dimensions of each image [100 100]',
+                      dest='dimensions', metavar='WIDTH HEIGHT', nargs=2,
+                      type='int', default=(100,100))
+    parser.add_option('-p', '--padding',
+                      help='Padding between images [%default]',
+                      dest='padding', type='int', default=0)
+    parser.add_option('-b', '--background',
+                      help='Background color [%default]',
+                      dest='background', default='white')
+    parser.add_option('-v', '--border', help='Border color', dest='border',
+                      default=None)
+    parser.add_option('-o', '--output', help='Output path', dest='output',
+                      default='pictogrid.jpg')
+
+    opts, args = parser.parse_args(argv)
+
+    try:
+        if not opts.cols:
+            raise RuntimeError('Required option missing: cols')
+        if len(args) == 1:
+            raise RuntimeError('Required arguments missing: images')
+    except RuntimeError, e:
+        print '%s\n' % e
+        parser.print_help()
+        sys.exit(-1)
+    else:
+        paths = args[1:]
+        w, h = opts.dimensions
+        pictogrid(paths, opts.cols, w, h, opts.padding, opts.background,
+                  opts.border, opts.output)
+
+if __name__ == '__main__':
+    main(sys.argv)
