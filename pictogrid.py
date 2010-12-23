@@ -1,4 +1,3 @@
-from __future__ import with_statement
 
 import os
 import sys
@@ -35,8 +34,8 @@ def pictogrid(images, cols, tile_width, tile_height, padding=0,
     output_width = (tile_width + padding) * cols + padding
     output_height = (tile_height + padding) * rows + padding
 
-    output_img = Image.new('RGB', (output_width, output_height), background)
-    draw = ImageDraw.Draw(output_img)
+    result = Image.new('RGB', (output_width, output_height), background)
+    draw = ImageDraw.Draw(result)
 
     for i, path in enumerate(images):
         col = i % cols
@@ -47,7 +46,7 @@ def pictogrid(images, cols, tile_width, tile_height, padding=0,
         offset = make_offset(img, col, row, tile_width, tile_height, padding)
         logging.debug('Offset: %r', offset)
 
-        output_img.paste(img, offset)
+        result.paste(img, offset)
 
         if border:
             x1, y1 = offset
@@ -55,10 +54,9 @@ def pictogrid(images, cols, tile_width, tile_height, padding=0,
             draw.rectangle(box, outline=border)
 
     if outpath:
-        output_img.save(outpath)
+        result.save(outpath)
 
-    return output_img
-
+    return result
 
 def make_offset(img, col, row, tw, th, padding):
     """Calculates the appropriate offset to place the given image at the given
@@ -76,19 +74,20 @@ def make_offset(img, col, row, tw, th, padding):
 
     return (x + dx, y + dy)
 
+def open_and_size(img_or_path, tw, th):
+    """Opens the image at the given path (unless it's already an Image object)
+    and ensures that it fits into the given target width and height."""
 
-def open_and_size(path, tw, th):
-    """Opens the image at the given path and ensures that it fits into the
-    given target width and height."""
-
-    img = Image.open(path)
+    if isinstance(img_or_path, Image.Image):
+        img = img_or_path
+    else:
+        img = Image.open(img_or_path)
 
     if img.size == (tw, th):
         return img
 
     w, h = img.size
-    ratio = min(tw/float(w),
-                th/float(h))
+    ratio = min(tw / float(w), th / float(h))
     nw = int(w * ratio)
     nh = int(h * ratio)
 
